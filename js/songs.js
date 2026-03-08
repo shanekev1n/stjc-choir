@@ -1,9 +1,14 @@
 // ─── SONG EDIT ────────────────────────────────────────────────────────────────
 
+let autofillData = null;   // holds the found previous song record
+let songSearchTimer = null;
+
 async function openSongEdit(songId) {
   const songs = await sb('mass_songs', 'GET', null, `?id=eq.${songId}&select=*`);
   const song = songs[0]; if (!song) return;
   editingSongId = songId;
+  autofillData  = null;
+  document.getElementById('autofillBanner').style.display = 'none';
   document.getElementById('modalPartTitle').textContent = song.part;
   document.getElementById('mSong').value  = song.song  || '';
   mBeat = song.beat_folder || '';
@@ -16,10 +21,76 @@ async function openSongEdit(songId) {
   document.body.style.overflow = 'hidden';
 }
 
+// ─── AUTOFILL ─────────────────────────────────────────────────────────────────
+
+function onSongNameInput(val) {
+  clearTimeout(songSearchTimer);
+  document.getElementById('autofillBanner').style.display = 'none';
+  autofillData = null;
+  const q = val.trim();
+  if (q.length < 2) return;
+  songSearchTimer = setTimeout(() => searchPreviousSong(q), 500);
+}
+
+async function searchPreviousSong(q) {
+  try {
+    // Search for this song name in other masses (not the current one), most recent first
+    const results = await sb('mass_songs', 'GET', null,
+      `?song=ilike.${encodeURIComponent(q)}&mass_id=neq.${currentMassId}&select=*,mass_services(id,date,occasion)&order=mass_services(date).desc&limit=1`
+    );
+    if (!results || results.length === 0) return;
+
+    const found = results[0];
+    // Only show banner if it has at least some settings saved
+    const hasSettings = found.beat_folder || found.tempo || found.scale || found.page;
+    if (!hasSettings) return;
+
+    autofillData = found;
+    const mass   = found.mass_services;
+    const key    = found.scale ? transposeKey(found.scale) : null;
+
+    // Build preview tags
+    const tags = [
+      found.beat_folder ? `<span class="autofill-tag">${esc(found.beat_folder)}</span>` : '',
+      found.page        ? `<span class="autofill-tag">${esc(found.page)}</span>` : '',
+      found.slot        ? `<span class="autofill-tag">Slot ${found.slot}</span>` : '',
+      found.tempo       ? `<span class="autofill-tag green">♩ ${found.tempo} BPM</span>` : '',
+      found.scale       ? `<span class="autofill-tag">${esc(found.scale)}</span>` : '',
+      key               ? `<span class="autofill-tag blue">Key: ${esc(key)}</span>` : '',
+    ].filter(Boolean).join('');
+
+    document.getElementById('autofillSub').textContent =
+      `From ${formatDateShort(mass?.date)} · ${mass?.occasion || ''}`;
+    document.getElementById('autofillTags').innerHTML = tags;
+    document.getElementById('autofillBanner').style.display = 'block';
+  } catch(e) { /* silently fail */ }
+}
+
+function applyAutofill() {
+  if (!autofillData) return;
+  mBeat = autofillData.beat_folder || '';
+  mPage = autofillData.page || '';
+  mSlot = autofillData.slot != null ? String(autofillData.slot) : '';
+  document.getElementById('mTempo').value = autofillData.tempo != null ? autofillData.tempo : '';
+  document.getElementById('mScale').value = autofillData.scale || '';
+  renderBeatChips(); renderPageChips(); renderSlotChips(); updateTransposed();
+  document.getElementById('autofillBanner').style.display = 'none';
+  autofillData = null;
+}
+
+function dismissAutofill() {
+  document.getElementById('autofillBanner').style.display = 'none';
+  autofillData = null;
+}
+
+// ─── MODAL ACTIONS ────────────────────────────────────────────────────────────
+
 function closeModal() {
   document.getElementById('songModal').classList.remove('open');
+  document.getElementById('autofillBanner').style.display = 'none';
   document.body.style.overflow = '';
   editingSongId = null;
+  autofillData  = null;
 }
 
 async function saveModal() {
@@ -42,7 +113,8 @@ function clearSongFields() {
   document.getElementById('mSong').value  = '';
   document.getElementById('mTempo').value = '';
   document.getElementById('mScale').value = '';
-  mBeat = ''; mPage = ''; mSlot = '';
+  document.getElementById('autofillBanner').style.display = 'none';
+  mBeat = ''; mPage = ''; mSlot = ''; autofillData = null;
   renderBeatChips(); renderPageChips(); renderSlotChips(); updateTransposed();
 }
 
