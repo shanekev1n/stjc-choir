@@ -314,3 +314,15 @@ textarea.form-input { min-height: 90px; resize: vertical; }
   border-color: var(--green); background: #7fd4a022;
   color: var(--green); font-weight: 700;
 }
+
+/* ─── WHATSAPP SHARE BUTTON ──────────────────────────────────────────────────── */
+.btn-whatsapp {
+  width: 100%; margin-top: 10px; padding: 14px;
+  border-radius: 12px; border: none;
+  background: #25d366; color: #fff;
+  font-family: 'Cinzel', serif; font-size: 13px;
+  font-weight: 700; letter-spacing: 0.5px;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.btn-whatsapp:hover { opacity: 0.88; }
+.btn-whatsapp:disabled { opacity: 0.5; cursor: not-allowed; }
