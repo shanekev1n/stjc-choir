@@ -182,7 +182,24 @@
     <div class="modal-part-title" id="modalPartTitle"></div>
     <div class="form-section">
       <label class="form-label">Song Name</label>
-      <input type="text" class="form-input" id="mSong" placeholder="Enter song name..." autocomplete="off"/>
+      <input type="text" class="form-input" id="mSong" placeholder="Enter song name..." autocomplete="off" oninput="onSongNameInput(this.value)"/>
+      <!-- Autofill banner (hidden by default) -->
+      <div id="autofillBanner" style="display:none; margin-top:10px;">
+        <div class="autofill-card">
+          <div class="autofill-header">
+            <span class="autofill-icon">✨</span>
+            <div class="autofill-text">
+              <div class="autofill-title">Found in previous Mass</div>
+              <div class="autofill-sub" id="autofillSub"></div>
+            </div>
+          </div>
+          <div class="autofill-tags" id="autofillTags"></div>
+          <div class="autofill-btns">
+            <button class="autofill-btn-no"  onclick="dismissAutofill()">Don't Paste</button>
+            <button class="autofill-btn-yes" onclick="applyAutofill()">✦ Paste Settings</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="form-section">
       <label class="form-label">Beat Folder</label>
