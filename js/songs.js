@@ -16,6 +16,7 @@ async function openSongEdit(songId) {
   mSlot = song.slot != null ? String(song.slot) : '';
   document.getElementById('mTempo').value = song.tempo != null ? song.tempo : '';
   document.getElementById('mScale').value = song.scale || '';
+  document.getElementById('mNotes').value = song.notes || '';
   renderBeatChips(); renderPageChips(); renderSlotChips(); updateTransposed();
   document.getElementById('songModal').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -103,7 +104,8 @@ async function saveModal() {
     page:        mPage,
     slot:        mSlot !== '' ? parseInt(mSlot) : null,
     tempo:       tempoVal !== '' ? parseInt(tempoVal) : null,
-    scale:       document.getElementById('mScale').value
+    scale:       document.getElementById('mScale').value,
+    notes:       document.getElementById('mNotes').value
   });
   closeModal();
   const mass = (await sb('mass_services', 'GET', null, `?id=eq.${currentMassId}&select=*`))[0];
@@ -114,6 +116,7 @@ function clearSongFields() {
   document.getElementById('mSong').value  = '';
   document.getElementById('mTempo').value = '';
   document.getElementById('mScale').value = '';
+  document.getElementById('mNotes').value = '';
   document.getElementById('autofillBanner').style.display = 'none';
   mBeat = ''; mPage = ''; mSlot = ''; autofillData = null;
   renderBeatChips(); renderPageChips(); renderSlotChips(); updateTransposed();

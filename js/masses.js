@@ -18,7 +18,16 @@ async function renderMassList() {
       const badge = `<div class="role-badge ${ROLE_CLASSES[currentUser.role]}">${ROLE_LABELS[currentUser.role]}</div>`;
       el.innerHTML = badge;
 
+      // Fetch all song counts in one request
+      const allSongs = await sb('mass_songs', 'GET', null, '?select=mass_id,song');
+
       masses.forEach(m => {
+        const songs  = allSongs.filter(s => s.mass_id === m.id);
+        const total  = songs.length;
+        const filled = songs.filter(s => s.song && s.song.trim() !== '').length;
+        const pct    = total > 0 ? Math.round((filled / total) * 100) : 0;
+        const rClass = pct === 100 ? 'ready-full' : pct >= 50 ? 'ready-half' : 'ready-low';
+
         const card = document.createElement('div');
         card.className = 'mass-card';
         card.innerHTML = `
@@ -27,8 +36,13 @@ async function renderMassList() {
             <div class="card-name">${esc(formatDateShort(m.date))}</div>
             <div class="card-occasion">${esc(m.occasion || '')}</div>
             ${m.notes ? `<div class="card-notes">${esc(m.notes)}</div>` : ''}
+            <div class="readiness-wrap">
+              <div class="readiness-bar"><div class="readiness-fill ${rClass}" style="width:${pct}%"></div></div>
+              <span class="readiness-label ${rClass}">${filled}/${total} songs</span>
+            </div>
           </div>
           ${canEdit() ? `<button class="card-delete-btn" title="Delete">🗑</button>` : '<div style="width:14px"></div>'}`;
+
         if (canEdit()) {
           card.querySelector('.card-delete-btn').addEventListener('click', e => {
             e.stopPropagation();
@@ -41,7 +55,6 @@ async function renderMassList() {
       el.appendChild(grid);
     }
 
-    // FAB — only for editors
     let fab = document.getElementById('massFab');
     if (!fab && canEdit()) {
       fab = document.createElement('button');
@@ -56,7 +69,7 @@ async function renderMassList() {
   }
 }
 
-// ─── NEW MASS ────────────────────────────────────────────────────────────────
+// ─── NEW MASS ─────────────────────────────────────────────────────────────────
 function showNewMass() {
   selectedOccasion = 'Ordinary Sunday';
   const today = new Date().toISOString().split('T')[0];
@@ -77,15 +90,14 @@ async function createMass() {
   btn.textContent = 'Creating...'; btn.disabled = true;
   try {
     const rows = await sb('mass_services', 'POST', {
-      name: formatName(date), date,
-      occasion: selectedOccasion,
+      name: formatName(date), date, occasion: selectedOccasion,
       notes: document.getElementById('newNotes').value,
       created_by: currentUser.id
     });
     const mass = rows[0];
     const parts = selectedOccasion === 'Lent' ? MASS_PARTS.filter(p => p !== 'Glory') : MASS_PARTS;
     for (const part of parts) {
-      await sb('mass_songs', 'POST', { mass_id: mass.id, part, song:'', beat_folder:'', page:'', slot:null, tempo:null, scale:'' });
+      await sb('mass_songs', 'POST', { mass_id: mass.id, part, song:'', beat_folder:'', page:'', slot:null, tempo:null, scale:'', notes:'' });
     }
     btn.textContent = 'Create Sunday Mass'; btn.disabled = false;
     openMass(mass.id, mass);
@@ -95,7 +107,7 @@ async function createMass() {
   }
 }
 
-// ─── MASS DETAIL ─────────────────────────────────────────────────────────────
+// ─── MASS DETAIL ──────────────────────────────────────────────────────────────
 async function openMass(id, massData) {
   currentMassId = id;
   const mass = massData || (await sb('mass_services', 'GET', null, `?id=eq.${id}&select=*`))[0];
@@ -125,9 +137,8 @@ async function renderDetail(mass) {
     infoCard.querySelectorAll('.info-row').forEach(r => r.addEventListener('click', () => openMassInfoEdit(mass)));
   }
 
-  // Songs table
   const tbody = document.getElementById('songsTableBody');
-  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
   const songs = await sb('mass_songs', 'GET', null, `?mass_id=eq.${mass.id}&select=*`);
   const sorted = songs
     .filter(s => !(mass.occasion === 'Lent' && s.part === 'Glory'))
@@ -136,7 +147,10 @@ async function renderDetail(mass) {
   tbody.innerHTML = sorted.map(s => `
     <tr class="${editable ? 'clickable' : ''}" onclick="${editable ? `openSongEdit('${s.id}')` : ''}">
       <td class="td-part">${esc(s.part)}</td>
-      <td class="td-song ${s.song ? '' : 'empty'}">${s.song ? esc(s.song) : (editable ? 'tap to fill' : '—')}</td>
+      <td class="td-song ${s.song ? '' : 'empty'}">
+        ${s.song ? esc(s.song) : (editable ? 'tap to fill' : '—')}
+        ${s.notes ? `<div class="td-song-notes">${esc(s.notes)}</div>` : ''}
+      </td>
       <td class="td-beat">${s.beat_folder || '—'}</td>
       <td class="td-page">${s.page || '—'}</td>
       <td class="td-slot">${s.slot != null ? s.slot : '—'}</td>
@@ -150,7 +164,7 @@ async function renderDetail(mass) {
   document.getElementById('massActionBtns').style.display = editable ? 'flex' : 'none';
 }
 
-// ─── DELETE MASS ─────────────────────────────────────────────────────────────
+// ─── DELETE MASS ──────────────────────────────────────────────────────────────
 function showDeleteConfirm(id, name) {
   document.getElementById('confirmMsg').textContent = `Delete Mass "${name}"? All songs will be permanently removed.`;
   document.getElementById('confirmOverlay').style.display = 'flex';
@@ -161,15 +175,57 @@ function showDeleteConfirm(id, name) {
     renderMassList();
     showScreen('screenList', 'STJC – Song Tracker', false);
   };
-  document.getElementById('confirmNo').onclick = () => {
-    document.getElementById('confirmOverlay').style.display = 'none';
-  };
+  document.getElementById('confirmNo').onclick = () => { document.getElementById('confirmOverlay').style.display = 'none'; };
 }
 
 function deleteMassAction() {
   const id   = document.getElementById('deleteMassBtn').getAttribute('data-mass-id');
   const name = document.getElementById('deleteMassBtn').getAttribute('data-mass-name');
   if (id) showDeleteConfirm(id, name);
+}
+
+// ─── COPY MASS ────────────────────────────────────────────────────────────────
+function showCopyMass() {
+  const next = new Date(); next.setDate(next.getDate() + 7);
+  document.getElementById('copyMassDate').value = next.toISOString().split('T')[0];
+  document.getElementById('copyMassModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCopyMassModal() {
+  document.getElementById('copyMassModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function confirmCopyMass() {
+  const newDate = document.getElementById('copyMassDate').value;
+  if (!newDate) { alert('Please select a date.'); return; }
+  const btn = document.getElementById('copyMassConfirmBtn');
+  btn.textContent = 'Copying...'; btn.disabled = true;
+  try {
+    const srcId   = document.getElementById('deleteMassBtn').getAttribute('data-mass-id');
+    const srcMass = (await sb('mass_services', 'GET', null, `?id=eq.${srcId}&select=*`))[0];
+    const newRows = await sb('mass_services', 'POST', {
+      name: formatName(newDate), date: newDate,
+      occasion: srcMass.occasion, notes: srcMass.notes || '',
+      created_by: currentUser.id
+    });
+    const newMass = newRows[0];
+    const srcSongs = await sb('mass_songs', 'GET', null, `?mass_id=eq.${srcId}&select=*`);
+    for (const s of srcSongs) {
+      await sb('mass_songs', 'POST', {
+        mass_id: newMass.id, part: s.part, song: s.song || '',
+        beat_folder: s.beat_folder || '', page: s.page || '',
+        slot: s.slot, tempo: s.tempo, scale: s.scale || '', notes: s.notes || ''
+      });
+    }
+    btn.textContent = 'Copy Mass'; btn.disabled = false;
+    closeCopyMassModal();
+    openMass(newMass.id, newMass);
+  } catch(e) {
+    alert('Error copying Mass. Try again.');
+    btn.textContent = 'Copy Mass'; btn.disabled = false;
+  }
 }
 
 // ─── EDIT MASS INFO ───────────────────────────────────────────────────────────
@@ -192,18 +248,11 @@ async function saveMassInfo() {
   const wasLentRes = await sb('mass_services', 'GET', null, `?id=eq.${id}&select=occasion`);
   const wasLent = wasLentRes[0]?.occasion === 'Lent';
   const nowLent = editOccasion === 'Lent';
-
-  await sb(`mass_services?id=eq.${id}`, 'PATCH', {
-    date: newDate, name: formatName(newDate), occasion: editOccasion, notes
-  });
-
+  await sb(`mass_services?id=eq.${id}`, 'PATCH', { date: newDate, name: formatName(newDate), occasion: editOccasion, notes });
   if (wasLent && !nowLent) {
     const existing = await sb('mass_songs', 'GET', null, `?mass_id=eq.${id}&part=eq.Glory`);
-    if (!existing.length) {
-      await sb('mass_songs', 'POST', { mass_id:id, part:'Glory', song:'', beat_folder:'', page:'', slot:null, tempo:null, scale:'' });
-    }
+    if (!existing.length) await sb('mass_songs', 'POST', { mass_id:id, part:'Glory', song:'', beat_folder:'', page:'', slot:null, tempo:null, scale:'', notes:'' });
   }
-
   closeMassInfoModal();
   const updated = (await sb('mass_services', 'GET', null, `?id=eq.${id}&select=*`))[0];
   showScreen('screenDetail', formatDateShort(updated.date), true);

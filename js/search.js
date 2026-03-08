@@ -7,10 +7,12 @@ function setBottomNav(visible) {
 function switchTab(tab) {
   document.getElementById('navMasses').classList.toggle('active', tab === 'masses');
   document.getElementById('navSearch').classList.toggle('active', tab === 'search');
+  document.getElementById('navStats').classList.toggle('active', tab === 'stats');
+
   if (tab === 'masses') {
     renderMassList();
     showScreen('screenList', 'STJC – Song Tracker', false);
-  } else {
+  } else if (tab === 'search') {
     document.getElementById('searchInput').value = '';
     document.getElementById('searchResults').innerHTML = `
       <div class="search-empty">
@@ -18,6 +20,9 @@ function switchTab(tab) {
         Type a song name to search across all Masses
       </div>`;
     showScreen('screenSearch', 'Song Search', false);
+  } else if (tab === 'stats') {
+    showScreen('screenStats', 'Statistics', false);
+    renderStats();
   }
 }
 
@@ -63,37 +68,64 @@ async function doSearch(q) {
       return esc(text).replace(re, '<em>$1</em>');
     }
 
+    // Group by song name (case-insensitive) for history timeline
+    const grouped = {};
+    results.forEach(s => {
+      const key = s.song.trim().toLowerCase();
+      if (!grouped[key]) grouped[key] = { name: s.song.trim(), entries: [] };
+      grouped[key].entries.push(s);
+    });
+
     container.innerHTML = `
       <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px;">
         ${results.length} RESULT${results.length !== 1 ? 'S' : ''} FOUND
       </div>`;
 
-    results.forEach(s => {
-      const mass = s.mass_services;
-      const key  = s.scale ? transposeKey(s.scale) : null;
-      const card = document.createElement('div');
-      card.className = 'search-result-card';
-      card.innerHTML = `
-        <div class="sr-song">${highlight(s.song, q)}</div>
-        <div class="sr-mass">📅 ${esc(formatDateShort(mass?.date))} · ${esc(mass?.occasion || '')}</div>
-        <div class="sr-tags">
-          <span class="sr-tag gold">${esc(s.part)}</span>
-          ${s.beat_folder ? `<span class="sr-tag">${esc(s.beat_folder)}</span>` : ''}
-          ${s.page        ? `<span class="sr-tag">${esc(s.page)}</span>`        : ''}
-          ${s.slot        ? `<span class="sr-tag">Slot ${s.slot}</span>`        : ''}
-          ${s.tempo       ? `<span class="sr-tag green">♩ ${s.tempo} BPM</span>` : ''}
-          ${s.scale       ? `<span class="sr-tag">${esc(s.scale)}</span>`       : ''}
-          ${key           ? `<span class="sr-tag blue">Key: ${esc(key)}</span>` : ''}
-        </div>`;
-      card.addEventListener('click', () => {
-        if (mass) {
-          setBottomNav(false);
-          openMass(mass.id, mass);
-        }
+    Object.values(grouped).forEach(group => {
+      const wrapper = document.createElement('div');
+      wrapper.style.marginBottom = '16px';
+
+      // Song title header
+      wrapper.innerHTML = `<div class="search-group-title">${highlight(group.name, q)}</div>`;
+
+      // History timeline entries
+      group.entries.forEach((s, idx) => {
+        const mass = s.mass_services;
+        const key  = s.scale ? transposeKey(s.scale) : null;
+        const isLatest = idx === 0;
+
+        const entry = document.createElement('div');
+        entry.className = `search-result-card ${isLatest ? 'search-result-latest' : ''}`;
+        entry.innerHTML = `
+          <div class="sr-timeline-dot-wrap">
+            <div class="sr-timeline-dot ${isLatest ? 'dot-gold' : 'dot-dim'}"></div>
+            ${idx < group.entries.length - 1 ? '<div class="sr-timeline-line"></div>' : ''}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div class="sr-mass">${isLatest ? '⭐ Latest · ' : ''}📅 ${esc(formatDateShort(mass?.date))} · ${esc(mass?.occasion || '')}</div>
+            <div class="sr-tags">
+              <span class="sr-tag gold">${esc(s.part)}</span>
+              ${s.beat_folder ? `<span class="sr-tag">${esc(s.beat_folder)}</span>` : ''}
+              ${s.page        ? `<span class="sr-tag">${esc(s.page)}</span>`        : ''}
+              ${s.slot        ? `<span class="sr-tag">Slot ${s.slot}</span>`        : ''}
+              ${s.tempo       ? `<span class="sr-tag green">♩ ${s.tempo} BPM</span>` : ''}
+              ${s.scale       ? `<span class="sr-tag">${esc(s.scale)}</span>`       : ''}
+              ${key           ? `<span class="sr-tag blue">Key: ${esc(key)}</span>` : ''}
+            </div>
+            ${s.notes ? `<div class="sr-song-notes">${esc(s.notes)}</div>` : ''}
+          </div>`;
+        entry.addEventListener('click', () => {
+          if (mass) {
+            setBottomNav(false);
+            openMass(mass.id, mass);
+          }
+        });
+        wrapper.appendChild(entry);
       });
-      container.appendChild(card);
+
+      container.appendChild(wrapper);
     });
-  } catch (e) {
+  } catch(e) {
     document.getElementById('searchResults').innerHTML =
       `<div class="search-empty">Search failed. Check connection.</div>`;
   }
