@@ -19,14 +19,14 @@ async function renderMassList() {
       el.innerHTML = badge;
 
       // Fetch all song counts in one request
-      const allSongs = await sb('mass_songs', 'GET', null, '?select=mass_id,song');
+      const allSongs = await sb('mass_songs', 'GET', null, '?select=mass_id,practiced');
 
       masses.forEach(m => {
-        const songs  = allSongs.filter(s => s.mass_id === m.id);
-        const total  = songs.length;
-        const filled = songs.filter(s => s.song && s.song.trim() !== '').length;
-        const pct    = total > 0 ? Math.round((filled / total) * 100) : 0;
-        const rClass = pct === 100 ? 'ready-full' : pct >= 50 ? 'ready-half' : 'ready-low';
+        const songs    = allSongs.filter(s => s.mass_id === m.id);
+        const total    = songs.length;
+        const practiced = songs.filter(s => s.practiced === true).length;
+        const pct      = total > 0 ? Math.round((practiced / total) * 100) : 0;
+        const rClass   = pct === 100 ? 'ready-full' : pct >= 50 ? 'ready-half' : 'ready-low';
 
         const card = document.createElement('div');
         card.className = 'mass-card';
@@ -38,7 +38,7 @@ async function renderMassList() {
             ${m.notes ? `<div class="card-notes">${esc(m.notes)}</div>` : ''}
             <div class="readiness-wrap">
               <div class="readiness-bar"><div class="readiness-fill ${rClass}" style="width:${pct}%"></div></div>
-              <span class="readiness-label ${rClass}">${filled}/${total} songs</span>
+              <span class="readiness-label ${rClass}">${practiced}/${total} practiced</span>
             </div>
           </div>
           ${canEdit() ? `<button class="card-delete-btn" title="Delete">🗑</button>` : '<div style="width:14px"></div>'}`;
@@ -222,7 +222,8 @@ async function confirmCopyMass() {
       await sb('mass_songs', 'POST', {
         mass_id: newMass.id, part: s.part, song: s.song || '',
         beat_folder: s.beat_folder || '', page: s.page || '',
-        slot: s.slot, tempo: s.tempo, scale: s.scale || '', notes: s.notes || ''
+        slot: s.slot, tempo: s.tempo, scale: s.scale || '',
+        notes: s.notes || '', practiced: false
       });
     }
     btn.textContent = 'Copy Mass'; btn.disabled = false;
@@ -282,5 +283,7 @@ async function togglePracticed(songId, current, btnEl) {
   const newVal = !current;
   btnEl.textContent = newVal ? '✓' : '○';
   btnEl.classList.toggle('practiced-done', newVal);
+  // Update the onclick to reflect new state
+  btnEl.setAttribute('onclick', `togglePracticed('${songId}', ${newVal}, this); event.stopPropagation()`);
   await sb(`mass_songs?id=eq.${songId}`, 'PATCH', { practiced: newVal });
 }
