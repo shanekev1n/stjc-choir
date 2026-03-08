@@ -157,6 +157,12 @@ async function renderDetail(mass) {
       <td class="td-bpm">${s.tempo != null ? s.tempo : '—'}</td>
       <td class="td-scale">${s.scale || '—'}</td>
       <td class="td-key">${s.scale ? transposeKey(s.scale) : '—'}</td>
+      ${canEdit() ? `<td onclick="event.stopPropagation()" style="text-align:center">
+        <button class="practiced-btn ${s.practiced ? 'practiced-done' : ''}"
+          onclick="togglePracticed('${s.id}', ${s.practiced ? 'true' : 'false'}, this)">
+          ${s.practiced ? '✓' : '○'}
+        </button>
+      </td>` : `<td style="text-align:center;color:${s.practiced ? 'var(--green)' : 'var(--border)'}">${s.practiced ? '✓' : '○'}</td>`}
     </tr>`).join('');
 
   document.getElementById('deleteMassBtn').setAttribute('data-mass-id', mass.id);
@@ -269,4 +275,12 @@ async function saveAllSongs() {
   const orig = btn.textContent;
   btn.textContent = '✓ Saved!'; btn.style.background = '#4caf7d';
   setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
+}
+
+// ─── PRACTICE CHECKLIST ───────────────────────────────────────────────────────
+async function togglePracticed(songId, current, btnEl) {
+  const newVal = !current;
+  btnEl.textContent = newVal ? '✓' : '○';
+  btnEl.classList.toggle('practiced-done', newVal);
+  await sb(`mass_songs?id=eq.${songId}`, 'PATCH', { practiced: newVal });
 }
