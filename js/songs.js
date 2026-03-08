@@ -34,9 +34,10 @@ function onSongNameInput(val) {
 
 async function searchPreviousSong(q) {
   try {
-    // Search for this song name in other masses (not the current one), most recent first
+    const encoded = encodeURIComponent(q);
+    const massFilter = currentMassId ? `&mass_id=neq.${currentMassId}` : '';
     const results = await sb('mass_songs', 'GET', null,
-      `?song=ilike.${encodeURIComponent(q)}&mass_id=neq.${currentMassId}&select=*,mass_services(id,date,occasion)&order=mass_services(date).desc&limit=1`
+      `?song=ilike.*${encoded}*${massFilter}&select=*,mass_services(id,date,occasion)&order=mass_services(date).desc&limit=1`
     );
     if (!results || results.length === 0) return;
 
