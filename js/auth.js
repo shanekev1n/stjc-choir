@@ -53,6 +53,7 @@ function showMainApp() {
   setBottomNav(true);
   document.getElementById('navMasses').classList.add('active');
   document.getElementById('navSearch').classList.remove('active');
+  document.getElementById('navStats').classList.remove('active');
   showScreen('screenList', 'STJC – Song Tracker', false);
   renderMassList();
 }
@@ -63,6 +64,6 @@ function showScreen(id, title, showBack) {
   document.getElementById(id).classList.add('active');
   document.getElementById('headerTitle').textContent = title;
   document.getElementById('backBtn').style.display = showBack ? 'flex' : 'none';
-  const navScreens = ['screenList', 'screenSearch'];
+  const navScreens = ['screenList', 'screenSearch', 'screenStats'];
   setBottomNav(navScreens.includes(id));
 }
