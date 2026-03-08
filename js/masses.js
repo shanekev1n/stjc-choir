@@ -18,16 +18,8 @@ async function renderMassList() {
       const badge = `<div class="role-badge ${ROLE_CLASSES[currentUser.role]}">${ROLE_LABELS[currentUser.role]}</div>`;
       el.innerHTML = badge;
 
-      // Fetch all song counts in one request
-      const allSongs = await sb('mass_songs', 'GET', null, '?select=mass_id,practiced');
-
+      // Fetch masses and render cards
       masses.forEach(m => {
-        const songs    = allSongs.filter(s => s.mass_id === m.id);
-        const total    = songs.length;
-        const practiced = songs.filter(s => s.practiced === true).length;
-        const pct      = total > 0 ? Math.round((practiced / total) * 100) : 0;
-        const rClass   = pct === 100 ? 'ready-full' : pct >= 50 ? 'ready-half' : 'ready-low';
-
         const card = document.createElement('div');
         card.className = 'mass-card';
         card.innerHTML = `
@@ -36,10 +28,6 @@ async function renderMassList() {
             <div class="card-name">${esc(formatDateShort(m.date))}</div>
             <div class="card-occasion">${esc(m.occasion || '')}</div>
             ${m.notes ? `<div class="card-notes">${esc(m.notes)}</div>` : ''}
-            <div class="readiness-wrap">
-              <div class="readiness-bar"><div class="readiness-fill ${rClass}" style="width:${pct}%"></div></div>
-              <span class="readiness-label ${rClass}">${practiced}/${total} practiced</span>
-            </div>
           </div>
           ${canEdit() ? `<button class="card-delete-btn" title="Delete">🗑</button>` : '<div style="width:14px"></div>'}`;
 
