@@ -151,6 +151,39 @@ textarea.form-input { min-height: 90px; resize: vertical; }
   .songs-table th, .songs-table td { padding: 9px 5px; }
 }
 
+/* ─── AUTOFILL BANNER ────────────────────────────────────────────────────────── */
+.autofill-card {
+  background: #c9a84c0f; border: 1px solid var(--gold-mid);
+  border-radius: 12px; padding: 12px 14px;
+  animation: fadeIn 0.2s ease;
+}
+.autofill-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.autofill-icon { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+.autofill-title { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); letter-spacing: 0.5px; }
+.autofill-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.autofill-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.autofill-tag {
+  font-size: 11px; padding: 3px 9px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+}
+.autofill-tag.blue  { color: var(--blue);  border-color: #7ecfff33; background: #7ecfff11; }
+.autofill-tag.green { color: var(--green); border-color: #7fd4a033; background: #7fd4a011; }
+.autofill-btns { display: flex; gap: 8px; }
+.autofill-btn-no {
+  flex: 1; padding: 9px; border-radius: 9px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-dim); font-family: 'Cinzel', serif; font-size: 11px; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.autofill-btn-no:hover { border-color: var(--text-dim); color: var(--text); }
+.autofill-btn-yes {
+  flex: 2; padding: 9px; border-radius: 9px;
+  border: none; background: var(--gold); color: #0c0c18;
+  font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.autofill-btn-yes:hover { opacity: 0.88; }
+
 /* ─── SECTION HEADING ────────────────────────────────────────────────────────── */
 .section-heading {
   font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold);
