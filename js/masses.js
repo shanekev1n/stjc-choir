@@ -156,6 +156,7 @@ async function renderDetail(mass) {
   document.getElementById('deleteMassBtn').setAttribute('data-mass-id', mass.id);
   document.getElementById('deleteMassBtn').setAttribute('data-mass-name', formatDateShort(mass.date));
   document.getElementById('massActionBtns').style.display = editable ? 'flex' : 'none';
+  document.getElementById('whatsappShareBtn').style.display = 'block';
 }
 
 // ─── DELETE MASS ──────────────────────────────────────────────────────────────
@@ -257,6 +258,29 @@ async function saveMassInfo() {
 function closeMassInfoModal() {
   document.getElementById('massInfoModal').classList.remove('open');
   document.body.style.overflow = '';
+}
+
+async function shareToWhatsApp() {
+  const btn = document.getElementById('whatsappShareBtn');
+  btn.textContent = 'Preparing...'; btn.disabled = true;
+  try {
+    const mass  = (await sb('mass_services', 'GET', null, `?id=eq.${currentMassId}&select=*`))[0];
+    const songs = await sb('mass_songs', 'GET', null, `?mass_id=eq.${currentMassId}&select=*`);
+    const sorted = songs
+      .filter(s => !(mass.occasion === 'Lent' && s.part === 'Glory'))
+      .sort((a, b) => MASS_PARTS.indexOf(a.part) - MASS_PARTS.indexOf(b.part));
+
+    let msg = `✝ STJC – ${formatDateShort(mass.date)} (${mass.occasion || 'Sunday Mass'})\n\n`;
+    sorted.forEach(s => {
+      msg += `${s.part}: ${s.song && s.song.trim() ? s.song.trim() : '—'}\n`;
+    });
+
+    const encoded = encodeURIComponent(msg.trim());
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  } catch(e) {
+    alert('Could not generate share message. Try again.');
+  }
+  btn.textContent = '📲 Share on WhatsApp'; btn.disabled = false;
 }
 
 async function saveAllSongs() {
