@@ -300,3 +300,17 @@ textarea.form-input { min-height: 90px; resize: vertical; }
 .dot-dim  { background: var(--border); border: 1px solid var(--text-faint); }
 .sr-timeline-line { flex: 1; width: 2px; background: var(--border); margin: 3px 0; min-height: 14px; }
 .sr-song-notes { font-size: 11px; color: var(--text-dim); font-style: italic; margin-top: 5px; }
+
+/* ─── PRACTICE CHECKLIST ─────────────────────────────────────────────────────── */
+.practiced-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  color: var(--text-dim); font-size: 14px; cursor: pointer;
+  transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif;
+}
+.practiced-btn:hover { border-color: var(--green); color: var(--green); }
+.practiced-btn.practiced-done {
+  border-color: var(--green); background: #7fd4a022;
+  color: var(--green); font-weight: 700;
+}
