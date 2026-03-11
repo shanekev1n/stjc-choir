@@ -413,27 +413,44 @@
   // ── SWIPE DOWN TO CLOSE MODALS ──────────────────────────────────────────────
   function addSwipeToClose(sheetEl, closeFn) {
     let startY = 0, currentY = 0, dragging = false;
+
     sheetEl.addEventListener('touchstart', e => {
-      startY   = e.touches[0].clientY;
-      currentY = startY;
+      // Only start swipe from top area of sheet (handle zone)
+      const rect = sheetEl.getBoundingClientRect();
+      const touchY = e.touches[0].clientY;
+      if (touchY - rect.top > 60) return; // only top 60px triggers swipe
+      startY   = touchY;
+      currentY = touchY;
       dragging = true;
       sheetEl.style.transition = 'none';
     }, { passive: true });
+
     sheetEl.addEventListener('touchmove', e => {
       if (!dragging) return;
       currentY = e.touches[0].clientY;
       const diff = currentY - startY;
-      if (diff > 0) sheetEl.style.transform = `translateY(${diff}px)`;
+      if (diff > 0) {
+        sheetEl.style.transform = `translateY(${diff}px)`;
+        // Prevent page pull-to-refresh while swiping modal
+        e.stopPropagation();
+      }
     }, { passive: true });
+
     sheetEl.addEventListener('touchend', () => {
       if (!dragging) return;
       dragging = false;
       const diff = currentY - startY;
       sheetEl.style.transition = '';
       sheetEl.style.transform  = '';
-      if (diff > 100) closeFn(); // swipe down > 100px = close
+      if (diff > 80) closeFn();
     });
   }
+
+  // Block pull-to-refresh when any modal is open
+  document.addEventListener('touchmove', e => {
+    const openModal = document.querySelector('.modal-overlay.open');
+    if (openModal) e.preventDefault();
+  }, { passive: false });
 
   addSwipeToClose(document.querySelector('#songModal .modal-sheet'),     closeModal);
   addSwipeToClose(document.querySelector('#massInfoModal .modal-sheet'), closeMassInfoModal);
