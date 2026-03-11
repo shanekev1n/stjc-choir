@@ -448,6 +448,34 @@
     });
   }
 
+  // Block pull-to-refresh on Safari without breaking scroll
+  let ptStartY = 0;
+  document.addEventListener('touchstart', e => {
+    ptStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    // Find the actual scrollable parent of the touched element
+    let el = e.target;
+    while (el && el !== document.body) {
+      const style    = getComputedStyle(el);
+      const overflow = style.overflowY;
+      const canScroll = overflow === 'auto' || overflow === 'scroll';
+      if (canScroll && el.scrollHeight > el.clientHeight) {
+        // It's a scrollable element — let it scroll naturally
+        // But still block pull-to-refresh if at the top and pulling down
+        if (el.scrollTop <= 0 && e.touches[0].clientY > ptStartY) {
+          e.preventDefault();
+        }
+        return;
+      }
+      el = el.parentElement;
+    }
+    // No scrollable parent found — block pull-to-refresh
+    if (e.touches[0].clientY > ptStartY) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
   // Block pull-to-refresh when any modal is open
   document.addEventListener('touchmove', e => {
     const openModal = document.querySelector('.modal-overlay.open');

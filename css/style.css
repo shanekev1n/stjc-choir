@@ -8,7 +8,8 @@
 
 /* ─── RESET ──────────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Crimson Pro', Georgia, serif; overflow-x: hidden; overscroll-behavior-y: none; }
+html { height: 100%; overscroll-behavior-y: none; }
+body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Crimson Pro', Georgia, serif; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: none; }
 #app { height: 100%; overscroll-behavior-y: none; }
 body::before {
   content: ''; position: fixed; inset: 0;
