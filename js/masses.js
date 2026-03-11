@@ -356,7 +356,7 @@ function closeMassInfoModal() {
 
 async function copyMassList() {
   const btn = document.querySelector('.btn-copylist');
-  btn.textContent = 'Copying...'; btn.disabled = true;
+  btn.textContent = 'Sharing...'; btn.disabled = true;
   try {
     const mass  = (await sb('mass_services', 'GET', null, `?id=eq.${currentMassId}&select=*`))[0];
     const songs = await sb('mass_songs', 'GET', null, `?mass_id=eq.${currentMassId}&select=*`);
@@ -368,26 +368,31 @@ async function copyMassList() {
     sorted.forEach(s => {
       text += `${s.part}: ${s.song && s.song.trim() ? s.song.trim() : '—'}\n`;
     });
+    text = text.trim();
 
-    // Try modern clipboard API first, fall back for mobile
+    // Safari / iOS — use native share sheet
+    if (navigator.share) {
+      await navigator.share({ text });
+      btn.textContent = '📋 Copy Song List';
+      btn.disabled = false;
+      return;
+    }
+
+    // Other browsers — clipboard API
     let copied = false;
     if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(text.trim());
-        copied = true;
-      } catch(e) { copied = false; }
+      try { await navigator.clipboard.writeText(text); copied = true; }
+      catch(e) { copied = false; }
     }
     if (!copied) {
-      // Mobile fallback — create a temporary textarea
       const ta = document.createElement('textarea');
-      ta.value = text.trim();
+      ta.value = text;
       ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
       document.body.appendChild(ta);
       ta.focus(); ta.select();
-      ta.setSelectionRange(0, 99999); // for mobile
+      ta.setSelectionRange(0, 99999);
       document.execCommand('copy');
       document.body.removeChild(ta);
-      copied = true;
     }
 
     btn.textContent = '✓ Copied!';
@@ -399,9 +404,13 @@ async function copyMassList() {
       btn.style.borderColor = '';
       btn.disabled = false;
     }, 2000);
+
   } catch(e) {
-    alert('Could not copy. Try again.');
-    btn.textContent = '📋 Copy Song List'; btn.disabled = false;
+    // User cancelled share or error
+    btn.textContent = '📋 Copy Song List';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+    btn.disabled = false;
   }
 }
 
