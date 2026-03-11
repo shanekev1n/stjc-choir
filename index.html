@@ -450,12 +450,14 @@
   let lastTouchY = 0;
   document.addEventListener('touchstart', e => {
     lastTouchY = e.touches[0].clientY;
-  }, { passive: false });
+  }, { passive: true });
   document.addEventListener('touchmove', e => {
-    const touchY = e.touches[0].clientY;
-    const scrollTop = document.scrollingElement.scrollTop;
-    // Block if pulling down at the top of the page
-    if (scrollTop <= 0 && touchY > lastTouchY) {
+    const touchY   = e.touches[0].clientY;
+    const el       = e.target.closest('.screen, .modal-sheet') || document.scrollingElement;
+    const scrollTop = el.scrollTop ?? document.scrollingElement.scrollTop;
+    const pullingDown = touchY > lastTouchY;
+    // Only block if: at the very top AND pulling down AND not inside a scrollable modal
+    if (scrollTop <= 0 && pullingDown && !e.target.closest('.modal-sheet')) {
       e.preventDefault();
     }
   }, { passive: false });
