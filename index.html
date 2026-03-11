@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>STJC – Song Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
@@ -445,22 +447,6 @@
       if (diff > 80) closeFn();
     });
   }
-
-  // Block pull-to-refresh on all browsers including Safari
-  let lastTouchY = 0;
-  document.addEventListener('touchstart', e => {
-    lastTouchY = e.touches[0].clientY;
-  }, { passive: true });
-  document.addEventListener('touchmove', e => {
-    const touchY   = e.touches[0].clientY;
-    const el       = e.target.closest('.screen, .modal-sheet') || document.scrollingElement;
-    const scrollTop = el.scrollTop ?? document.scrollingElement.scrollTop;
-    const pullingDown = touchY > lastTouchY;
-    // Only block if: at the very top AND pulling down AND not inside a scrollable modal
-    if (scrollTop <= 0 && pullingDown && !e.target.closest('.modal-sheet')) {
-      e.preventDefault();
-    }
-  }, { passive: false });
 
   // Block pull-to-refresh when any modal is open
   document.addEventListener('touchmove', e => {
