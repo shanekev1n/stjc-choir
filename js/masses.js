@@ -136,6 +136,7 @@ async function createMass() {
 // ─── MASS DETAIL ──────────────────────────────────────────────────────────────
 async function openMass(id, massData) {
   currentMassId = id;
+  massIsDirty   = false;  // fresh load — not dirty
   const mass = massData || (await sb('mass_services', 'GET', null, `?id=eq.${id}&select=*`))[0];
   showScreen('screenDetail', formatDateShort(mass.date), true);
 
@@ -399,13 +400,25 @@ async function deleteExtraPart(songId, partName) {
 }
 
 // ─── DELETE MASS ──────────────────────────────────────────────────────────────
-function showDeleteConfirm(id, name, onConfirmCallback) {
-  const msg = onConfirmCallback
-    ? `Remove "${name}" from this mass? This cannot be undone.`
-    : `Delete Mass "${name}"? All songs will be permanently removed.`;
+function showDeleteConfirm(id, name, onConfirmCallback, opts = {}) {
+  const msg = opts.msg
+    ? opts.msg
+    : onConfirmCallback && !id
+      ? `Remove "${name}" from this mass? This cannot be undone.`
+      : `Delete Mass "${name}"? All songs will be permanently removed.`;
+
   document.getElementById('confirmMsg').textContent = msg;
   document.getElementById('confirmOverlay').style.display = 'flex';
-  document.getElementById('confirmYes').onclick = async () => {
+
+  const yesBtn = document.getElementById('confirmYes');
+  yesBtn.textContent = opts.confirmLabel || 'Delete';
+  yesBtn.className   = opts.confirmClass  || 'btn-danger';
+  yesBtn.style.flex  = '1'; yesBtn.style.padding = '13px';
+  yesBtn.style.borderRadius = '10px'; yesBtn.style.border = 'none';
+  yesBtn.style.fontFamily = "'Cinzel',serif"; yesBtn.style.fontSize = '13px';
+  yesBtn.style.cursor = 'pointer';
+
+  yesBtn.onclick = async () => {
     document.getElementById('confirmOverlay').style.display = 'none';
     if (onConfirmCallback) {
       await onConfirmCallback();

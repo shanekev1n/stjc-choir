@@ -1,3 +1,5 @@
+let massIsDirty = false;
+
 // ─── SONG EDIT ────────────────────────────────────────────────────────────────
 
 let autofillData = null;   // holds the found previous song record
@@ -139,6 +141,7 @@ function closeModal() {
 
 async function saveModal() {
   if (!editingSongId) { closeModal(); return; }
+  massIsDirty = true;  // mark dirty on save (song was edited)
   const tempoVal = document.getElementById('mTempo').value;
   await sb(`mass_songs?id=eq.${editingSongId}`, 'PATCH', {
     song:        document.getElementById('mSong').value,

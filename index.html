@@ -441,6 +441,24 @@
 <script src="js/attendance.js"></script>
 <script>
   document.getElementById('backBtn').onclick = () => {
+    const onScreenDetail = document.getElementById('screenDetail').classList.contains('active');
+    if (onScreenDetail && massIsDirty) {
+      showDeleteConfirm(null, null, () => {
+        massIsDirty = false;
+        currentMassId = null;
+        document.getElementById('navMasses').classList.add('active');
+        document.getElementById('navSearch').classList.remove('active');
+        document.getElementById('navStats').classList.remove('active');
+        renderMassList();
+        showScreen('screenList', 'STJC – Song Tracker', false);
+      }, {
+        msg: 'You have unsaved changes. Leave without saving?',
+        confirmLabel: 'Leave',
+        confirmClass: 'btn-danger'
+      });
+      return;
+    }
+    massIsDirty = false;
     currentMassId = null;
     document.getElementById('navMasses').classList.add('active');
     document.getElementById('navSearch').classList.remove('active');
