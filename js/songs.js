@@ -19,11 +19,20 @@ async function openSongEdit(songId) {
   document.getElementById('mNotes').value = song.notes || '';
   renderBeatChips(); renderPageChips(); renderSlotChips(); updateTransposed();
 
-  // Show "Remove This Part" only for extra (non-default) parts
+  // Show "Remove This Part" for ALL parts (with warning for defaults)
   const removeWrap = document.getElementById('removePartWrap');
-  if (removeWrap) {
-    const isExtra = !MASS_PARTS.includes(song.part);
-    removeWrap.style.display = isExtra ? 'block' : 'none';
+  if (removeWrap && canEdit()) {
+    const isDefault = MASS_PARTS.includes(song.part);
+    const removeBtn = removeWrap.querySelector('.btn-remove-part');
+    if (removeBtn) {
+      removeBtn.textContent = isDefault
+        ? `⚠ Remove ${song.part} (default part)`
+        : `✕ Remove ${song.part}`;
+      removeBtn.style.opacity = isDefault ? '0.6' : '1';
+    }
+    removeWrap.style.display = canEdit() ? 'block' : 'none';
+  } else if (removeWrap) {
+    removeWrap.style.display = 'none';
   }
 
   document.getElementById('songModal').classList.add('open');

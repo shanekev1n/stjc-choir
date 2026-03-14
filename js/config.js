@@ -5,7 +5,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const CHROMATIC   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const MASS_PARTS  = ['Entrance','Lord Have Mercy','Glory','Psalm','Acclamation','Offertory','Holy','Proclamation','Peace / Lamb of God','Communion 1','Communion 2','Recessional'];
-const OCCASIONS   = ['Ordinary Sunday','Lent','Advent','Feast','Holy Week','Christmas','Easter','Other'];
+const WEDDING_PARTS = ['Entrance','Lord Have Mercy','Glory','Psalm','Acclamation','Nuptial Song','Offertory','Holy','Proclamation','Peace / Lamb of God','Communion 1','Communion 2','Recessional'];
+const OCCASIONS   = ['Ordinary Sunday','Lenten Sunday','Easter Sunday','Advent Sunday','Christmas','Holy Week','Feast','Wedding Mass','Custom'];
 const BEAT_FOLDERS = ['Ballad','Ballroom','Country','Dance','Entertainer','Latin','Movie & Show','Pop & Rock','R&B','Sing & Jazz','World'];
 const PAGES       = ['P1','P2','P3','P4','P5','P6'];
 const SLOTS       = [1,2,3,4,5,6,7,8,9,10];
@@ -52,14 +53,37 @@ function formatName(d) {
 
 function transposeKey(scale) {
   if (!scale || !scale.trim()) return '';
-  const m = scale.trim().match(/^([A-G]#?)(([+-])(\d+))?$/);
+  // Match: root (e.g. C, C#, Eb) + optional minor (m) + optional shift (+2, -5)
+  const m = scale.trim().match(/^([A-G][b#]?)(m?)(([+-])(\d+))?$/);
   if (!m) return scale;
-  const base = m[1], sign = m[3], steps = m[4] ? parseInt(m[4]) : 0;
-  const idx = CHROMATIC.indexOf(base);
-  if (idx === -1) return scale;
-  if (!sign || steps === 0) return base;
-  const ni = sign === '+' ? (idx+steps)%12 : ((idx-steps)%12+12)%12;
-  return CHROMATIC[ni];
+
+  const base  = m[1];           // e.g. "G", "C#", "Eb"
+  const minor = m[2];           // "m" or ""
+  const sign  = m[4];           // "+" or "-" or undefined
+  const steps = m[5] ? parseInt(m[5]) : 0;
+
+  // Support both sharps and flats
+  const SHARPS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const FLATS  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+  // Find index — check both sharps and flats
+  let idx = SHARPS.indexOf(base);
+  let useFlats = false;
+  if (idx === -1) {
+    idx = FLATS.indexOf(base);
+    useFlats = true;
+  }
+  if (idx === -1) return scale; // unrecognised root
+
+  if (!sign || steps === 0) return base + minor;
+
+  const ni = sign === '+'
+    ? (idx + steps) % 12
+    : ((idx - steps) % 12 + 12) % 12;
+
+  // Prefer flats if original was flat, otherwise sharps
+  const result = useFlats ? FLATS[ni] : SHARPS[ni];
+  return result + minor;
 }
 
 // ─── SUPABASE API ─────────────────────────────────────────────────────────────

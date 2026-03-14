@@ -14,16 +14,52 @@ async function renderStats() {
     const filledSongs = songs.filter(s => s.song && s.song.trim() !== '');
     const totalMasses = masses.length;
 
-    // ── Song frequency ────────────────────────────────────────────────────────
-    const songCount = {};
-    filledSongs.forEach(s => {
-      const k = s.song.trim().toLowerCase();
-      if (!songCount[k]) songCount[k] = { name: s.song.trim(), count: 0 };
-      songCount[k].count++;
-    });
-    const sorted     = Object.values(songCount).sort((a, b) => b.count - a.count);
-    const topSongs   = sorted.slice(0, 5);
-    const leastSongs = [...sorted].sort((a, b) => a.count - b.count).slice(0, 5);
+    // ── Most used per part (exclude Proclamation) ─────────────────────────────
+    const EXCLUDED_PARTS = ['Proclamation'];
+
+    // Get all unique parts from actual data (covers custom parts too)
+    const allParts = [...new Set(filledSongs.map(s => s.part))]
+      .filter(p => !EXCLUDED_PARTS.includes(p))
+      .sort((a, b) => {
+        // Sort by MASS_PARTS order
+        function key(part) {
+          const m = part.match(/^(.+?)\s+(\d+)$/);
+          if (m) {
+            const anchor = MASS_PARTS.findIndex(p => p === m[1]+' 1' || p === m[1]+' 2' || p === m[1]);
+            return (anchor !== -1 ? anchor : MASS_PARTS.length) * 1000 + parseInt(m[2]);
+          }
+          const idx = MASS_PARTS.indexOf(part);
+          return idx !== -1 ? idx * 1000 + 1 : 9999;
+        }
+        return key(a) - key(b);
+      });
+
+    // Build top 3 songs per part
+    const perPartHtml = allParts.map(part => {
+      const partSongs = filledSongs.filter(s => s.part === part);
+      const countMap  = {};
+      partSongs.forEach(s => {
+        const k = s.song.trim().toLowerCase();
+        if (!countMap[k]) countMap[k] = { name: s.song.trim(), count: 0 };
+        countMap[k].count++;
+      });
+      const top = Object.values(countMap)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+
+      if (top.length === 0) return '';
+
+      return `
+        <div class="stats-part-block">
+          <div class="stats-part-title">${esc(part)}</div>
+          ${top.map((s, i) => `
+            <div class="stats-row">
+              <span class="stats-rank">${i + 1}</span>
+              <span class="stats-row-name">${esc(s.name)}</span>
+              <span class="stats-row-count">${s.count}×</span>
+            </div>`).join('')}
+        </div>`;
+    }).join('');
 
     // ── Attendance % ──────────────────────────────────────────────────────────
     const attStats = allMembers.map(m => {
@@ -31,15 +67,15 @@ async function renderStats() {
       const attended = records.filter(a => a.status === 'present' || a.status === 'late').length;
       const marked   = records.filter(a => a.status !== '').length;
       const pct      = marked > 0 ? Math.round((attended / marked) * 100) : null;
-      return { name: m.display_name, attended, marked, totalMasses, pct };
+      return { name: m.display_name, attended, marked, pct };
     }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
 
     const attHtml = attStats.length === 0
       ? `<div class="stats-empty">No members found.</div>`
       : attStats.map(a => {
-          const pct     = a.pct ?? 0;
+          const pct      = a.pct ?? 0;
           const barColor = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--gold)' : 'var(--red)';
-          const label   = a.pct === null ? 'No data' : `${a.attended} / ${a.marked} · ${pct}%`;
+          const label    = a.pct === null ? 'No data' : `${a.attended} / ${a.marked} · ${pct}%`;
           return `
             <div class="att-stat-row">
               <div class="att-stat-header">
@@ -65,37 +101,18 @@ async function renderStats() {
         </div>
       </div>
 
-      <!-- Attendance % -->
+      <!-- Attendance -->
       <div class="stats-section">
         <div class="stats-section-title">👥 Attendance</div>
         <div class="att-stat-note">Present + Late counted as attended</div>
         ${attHtml}
       </div>
 
-      <!-- Most Used Songs -->
+      <!-- Most Used Per Part -->
       <div class="stats-section">
-        <div class="stats-section-title">🎵 Most Used Songs</div>
-        ${topSongs.length === 0
-          ? `<div class="stats-empty">No songs filled yet</div>`
-          : topSongs.map((s, i) => `
-            <div class="stats-row">
-              <span class="stats-rank">${i + 1}</span>
-              <span class="stats-row-name">${esc(s.name)}</span>
-              <span class="stats-row-count">${s.count}×</span>
-            </div>`).join('')}
-      </div>
-
-      <!-- Least Used Songs -->
-      <div class="stats-section">
-        <div class="stats-section-title">📉 Least Used Songs</div>
-        ${leastSongs.length === 0
-          ? `<div class="stats-empty">No songs filled yet</div>`
-          : leastSongs.map((s, i) => `
-            <div class="stats-row">
-              <span class="stats-rank">${i + 1}</span>
-              <span class="stats-row-name">${esc(s.name)}</span>
-              <span class="stats-row-count" style="color:var(--text-dim)">${s.count}×</span>
-            </div>`).join('')}
+        <div class="stats-section-title">🎵 Most Used Songs by Part</div>
+        <div class="stats-part-note">Top 3 songs per part · Proclamation excluded</div>
+        ${perPartHtml || `<div class="stats-empty">No songs filled yet</div>`}
       </div>`;
 
   } catch(e) {

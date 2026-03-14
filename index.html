@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="STJC"/>
+  <link rel="manifest" href="manifest.json"/>
   <title>STJC – Song Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
@@ -49,6 +53,9 @@
 
     <!-- ── Mass List ──────────────────────────────────────────────────────── -->
     <div class="screen active" id="screenList">
+      <div class="mass-filter-wrap">
+        <div class="mass-filter-chips" id="massFilterChips"></div>
+      </div>
       <div id="massListContainer"></div>
       <div class="app-footer">
         <div class="footer-name">✝ Saint Teresa's Junior Choir</div>
@@ -66,6 +73,10 @@
       <div class="form-section">
         <label class="form-label">Occasion</label>
         <div class="chip-row" id="occasionChips"></div>
+        <!-- Custom occasion name input -->
+        <div id="customOccasionWrap" style="display:none; margin-top:10px;">
+          <input type="text" class="form-input" id="customOccasionInput" placeholder="Enter occasion name..."/>
+        </div>
       </div>
       <div class="form-section">
         <label class="form-label">Notes</label>
@@ -208,14 +219,54 @@
   <!-- ── Add Part Modal ──────────────────────────────────────────────────── -->
   <div class="modal-overlay" id="addPartModal">
     <div class="modal-sheet">
-      <div class="modal-label" style="margin-bottom:6px;">ADD PART TO MASS</div>
-      <div style="color:var(--text-dim);font-size:14px;margin-bottom:20px;">
-        Select which part to add. It will be numbered automatically.
+      <div class="modal-handle"></div>
+
+      <!-- Step 1: Choose type -->
+      <div id="addPartStep1">
+        <div class="modal-label" style="margin-bottom:6px;">ADD PART TO MASS</div>
+        <div style="color:var(--text-dim);font-size:14px;margin-bottom:20px;">What would you like to add?</div>
+        <div class="add-part-chips">
+          <div class="add-part-chip" onclick="showAddPartStep2('duplicate')">
+            <div style="font-size:15px;margin-bottom:3px;">⎘ Duplicate a Part</div>
+            <div style="font-size:12px;color:var(--text-dim);">Add another Communion, Psalm, etc.</div>
+          </div>
+          <div class="add-part-chip" onclick="showAddPartStep2('custom')">
+            <div style="font-size:15px;margin-bottom:3px;">✦ Custom Part</div>
+            <div style="font-size:12px;color:var(--text-dim);">Add any part with a custom name</div>
+          </div>
+        </div>
+        <div class="modal-btns" style="margin-top:20px;">
+          <button class="btn-cancel" style="flex:1;" onclick="closeAddPartModal()">Cancel</button>
+        </div>
       </div>
-      <div class="add-part-chips" id="addPartChips"></div>
-      <div class="modal-btns" style="margin-top:20px;">
-        <button class="btn-cancel" style="flex:1;" onclick="closeAddPartModal()">Cancel</button>
+
+      <!-- Step 2a: Duplicate existing part -->
+      <div id="addPartStep2Duplicate" style="display:none;">
+        <div class="modal-label" style="margin-bottom:6px;">DUPLICATE A PART</div>
+        <div style="color:var(--text-dim);font-size:14px;margin-bottom:20px;">Select which part to duplicate. It will be numbered automatically.</div>
+        <div class="add-part-chips" id="addPartChips"></div>
+        <div class="modal-btns" style="margin-top:20px;">
+          <button class="btn-cancel" style="flex:1;" onclick="showAddPartStep1()">← Back</button>
+        </div>
       </div>
+
+      <!-- Step 2b: Custom part -->
+      <div id="addPartStep2Custom" style="display:none;">
+        <div class="modal-label" style="margin-bottom:6px;">CUSTOM PART</div>
+        <div class="form-section" style="margin-bottom:16px;">
+          <label class="form-label">Part Name</label>
+          <input type="text" class="form-input" id="customPartName" placeholder="e.g. Opening Prayer, Responsorial..."/>
+        </div>
+        <div class="form-section">
+          <label class="form-label">Insert After</label>
+          <div class="add-part-chips" id="insertAfterChips"></div>
+        </div>
+        <div class="modal-btns" style="margin-top:20px;">
+          <button class="btn-cancel" onclick="showAddPartStep1()">← Back</button>
+          <button class="btn-save" onclick="confirmCustomPart()">Add Part</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -334,6 +385,9 @@
     <div class="form-section">
       <label class="form-label">Occasion</label>
       <div class="chip-row" id="editOccasionChips"></div>
+      <div id="editCustomOccasionWrap" style="display:none; margin-top:10px;">
+        <input type="text" class="form-input" id="editCustomOccasionInput" placeholder="Enter occasion name..."/>
+      </div>
     </div>
     <div class="form-section">
       <label class="form-label">Notes</label>
@@ -409,6 +463,60 @@
   document.getElementById('copyMassModal').addEventListener('click', function (e) {
     if (e.target === this) closeCopyMassModal();
   });
+
+  // ── SWIPE DOWN TO CLOSE MODALS ──────────────────────────────────────────────
+  function addSwipeToClose(sheetEl, closeFn) {
+    let startY = 0, currentY = 0, dragging = false;
+
+    sheetEl.addEventListener('touchstart', e => {
+      // Only start swipe from top area of sheet (handle zone)
+      const rect = sheetEl.getBoundingClientRect();
+      const touchY = e.touches[0].clientY;
+      if (touchY - rect.top > 60) return; // only top 60px triggers swipe
+      startY   = touchY;
+      currentY = touchY;
+      dragging = true;
+      sheetEl.style.transition = 'none';
+    }, { passive: true });
+
+    sheetEl.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
+      if (diff > 0) {
+        sheetEl.style.transform = `translateY(${diff}px)`;
+        // Prevent page pull-to-refresh while swiping modal
+        e.stopPropagation();
+      }
+    }, { passive: true });
+
+    sheetEl.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      const diff = currentY - startY;
+      sheetEl.style.transition = '';
+      sheetEl.style.transform  = '';
+      if (diff > 80) closeFn();
+    });
+  }
+
+  // Block pull-to-refresh when running as installed PWA (home screen)
+  if (window.navigator.standalone) {
+    document.addEventListener('touchmove', e => {
+      if (e.touches.length === 1) e.preventDefault();
+    }, { passive: false });
+  }
+
+  // Block pull-to-refresh when any modal is open
+  document.addEventListener('touchmove', e => {
+    const openModal = document.querySelector('.modal-overlay.open');
+    if (openModal) e.preventDefault();
+  }, { passive: false });
+
+  addSwipeToClose(document.querySelector('#songModal .modal-sheet'),     closeModal);
+  addSwipeToClose(document.querySelector('#massInfoModal .modal-sheet'), closeMassInfoModal);
+  addSwipeToClose(document.querySelector('#copyMassModal .modal-sheet'), closeCopyMassModal);
+  addSwipeToClose(document.querySelector('#addPartModal .modal-sheet'),  closeAddPartModal);
 
   const saved = sessionStorage.getItem('stjc_user');
   if (saved) { currentUser = JSON.parse(saved); showMainApp(); }
