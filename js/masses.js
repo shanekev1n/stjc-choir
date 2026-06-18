@@ -118,8 +118,7 @@ async function createMass() {
     })();
     const rows = await sb('mass_services', 'POST', {
       name: formatName(date), date, occasion: occasionToSave,
-      notes: document.getElementById('newNotes').value,
-      created_by: currentUser.id
+      notes: document.getElementById('newNotes').value
     });
     const mass = rows[0];
     for (const part of parts) {
@@ -422,8 +421,7 @@ async function confirmCopyMass() {
     const srcMass = (await sb('mass_services', 'GET', null, `?id=eq.${srcId}&select=*`))[0];
     const newRows = await sb('mass_services', 'POST', {
       name: formatName(newDate), date: newDate,
-      occasion: srcMass.occasion, notes: srcMass.notes || '',
-      created_by: currentUser.id
+      occasion: srcMass.occasion, notes: srcMass.notes || ''
     });
     const newMass = newRows[0];
     const srcSongs = await sb('mass_songs', 'GET', null, `?mass_id=eq.${srcId}&select=*`);
