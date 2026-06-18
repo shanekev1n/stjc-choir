@@ -1,0 +1,11 @@
+{
+  "name": "STJC Song Tracker",
+  "short_name": "STJC",
+  "description": "Saint Teresa's Junior Choir Song Tracker",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0A0A0C",
+  "theme_color": "#0A0A0C",
+  "orientation": "portrait"
+}

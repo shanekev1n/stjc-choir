@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="STJC"/>
+  <link rel="manifest" href="manifest.json"/>
+  <title>STJC – Song Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── LOGIN SCREEN ─────────────────────────────────────────────────────── -->
+  <div id="loginScreen" class="login-wrap">
+    <div class="login-logo">✝</div>
+    <div class="login-title">Saint Teresa's Junior Choir</div>
+    <div class="login-sub">STJC – Song Tracker</div>
+    <div class="login-box">
+      <div class="login-error" id="loginError"></div>
+      <div class="form-section" style="margin-top:0">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-input" id="loginUsername" placeholder="Enter username" autocomplete="off"/>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" autocomplete="off"/>
+      </div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>
+
+  <!-- ── MAIN APP ──────────────────────────────────────────────────────────── -->
+  <div id="mainApp" style="display:none">
+
+    <header class="app-header">
+      <button class="back-btn" id="backBtn" style="display:none">‹ Back</button>
+      <h1 id="headerTitle">STJC – Song Tracker</h1>
+      <div style="position:relative;">
+        <div class="header-user" onclick="toggleUserMenu(event)">
+          <span id="headerUsername"></span>
+          <span style="color:var(--gold);font-size:11px;margin-left:4px;">▾</span>
+        </div>
+        <div id="userMenu" class="user-menu" style="display:none;" onclick="event.stopPropagation()">
+          <button class="user-menu-item" onclick="closeUserMenu(); showProfile()">⚙ Profile Settings</button>
+          <button class="user-menu-item user-menu-logout" onclick="doLogout()">↩ Sign Out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Mass List ──────────────────────────────────────────────────────── -->
+    <div class="screen active" id="screenList">
+      <div class="mass-filter-wrap">
+        <div class="mass-filter-chips" id="massFilterChips"></div>
+      </div>
+      <div id="massListContainer"></div>
+      <div class="app-footer">
+        <div class="footer-name">✝ Saint Teresa's Junior Choir</div>
+        <div class="footer-sub">STJC · Song Tracker</div>
+      </div>
+    </div>
+
+    <!-- ── New Mass ───────────────────────────────────────────────────────── -->
+    <div class="screen" id="screenNew">
+      <div class="form-section">
+        <label class="form-label">Mass Date</label>
+        <input type="date" class="form-input" id="newDate"/>
+        <div class="form-hint" id="newDateHint">Name will be set automatically</div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Occasion</label>
+        <div class="chip-row" id="occasionChips"></div>
+        <!-- Custom occasion name input -->
+        <div id="customOccasionWrap" style="display:none; margin-top:10px;">
+          <input type="text" class="form-input" id="customOccasionInput" placeholder="Enter occasion name..."/>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="newNotes" placeholder="Any notes about this Mass..."></textarea>
+      </div>
+      <button class="btn-primary" id="createMassBtn" onclick="createMass()">Create Sunday Mass</button>
+    </div>
+
+    <!-- ── Mass Detail ────────────────────────────────────────────────────── -->
+    <div class="screen" id="screenDetail">
+      <div class="info-card" id="detailInfoCard"></div>
+
+      <!-- Tabs -->
+      <div class="detail-tabs">
+        <button class="detail-tab active" id="tabSongs" onclick="switchDetailTab('songs')">🎵 Songs</button>
+        <button class="detail-tab" id="tabAttendance" onclick="switchDetailTab('attendance')">👥 Attendance</button>
+      </div>
+
+      <!-- Songs Tab -->
+      <div id="tabContentSongs">
+        <div class="table-scroll">
+          <table class="songs-table">
+            <thead>
+              <tr>
+                <th>Part</th><th>Song</th><th>Beat Folder</th>
+                <th>Page</th><th>Slot</th><th>Tempo</th><th>Scale</th><th>Key</th>
+                <th><button class="check-all-btn" id="checkAllBtn" onclick="toggleCheckAll()" title="Check / Uncheck All">✓ All</button></th>
+              </tr>
+            </thead>
+            <tbody id="songsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="mass-action-btns" id="massActionBtns">
+          <!-- Row 1: Secondary actions -->
+          <div class="mass-action-row">
+            <button class="btn-action btn-delete" onclick="deleteMassAction()">🗑 Delete Mass</button>
+            <button class="btn-action btn-duplicate" onclick="showCopyMass()">⎘ Duplicate Mass</button>
+            <button class="btn-action btn-copylist" onclick="copyMassList()">📋 Copy Song List</button>
+          </div>
+          <!-- Add Part button -->
+          <button class="btn-add-part" id="addPartBtn" style="display:none;" onclick="showAddPartModal()">＋ Add Part</button>
+          <!-- Row 2: Primary action -->
+          <button class="btn-save-changes" onclick="saveAllSongs()">✓ Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Attendance Tab -->
+      <div id="tabContentAttendance" style="display:none;">
+        <div id="attendanceContainer"></div>
+      </div>
+    </div>
+
+    <!-- ── Search Screen ──────────────────────────────────────────────────── -->
+    <div class="screen" id="screenSearch">
+      <div class="search-bar-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput"
+          placeholder="Search songs..." autocomplete="off"
+          oninput="onSearchInput(this.value)"/>
+      </div>
+      <!-- Part filter -->
+      <div class="search-filter-wrap">
+        <div class="search-filter-label">Filter by Part</div>
+        <div class="search-filter-chips" id="searchPartChips"></div>
+      </div>
+      <div id="searchResults">
+        <div class="search-empty">
+          <span class="search-empty-icon">🎵</span>
+          Type a song name to search across all Masses
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stats Screen ───────────────────────────────────────────────────── -->
+    <div class="screen" id="screenStats">
+      <div id="statsContainer">
+        <div class="loading-wrap"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ── Profile / Settings ─────────────────────────────────────────────── -->
+    <div class="screen" id="screenProfile">
+      <div class="info-card" style="margin-bottom:24px;">
+        <div class="info-row">
+          <span class="info-key">DISPLAY NAME</span>
+          <span class="info-val" id="profileDisplayName"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">ROLE</span>
+          <span class="info-val" id="profileRole"></span>
+        </div>
+      </div>
+
+      <div class="section-heading">CHANGE USERNAME</div>
+      <div class="info-card" style="padding:16px; margin-bottom:8px;">
+        <div class="form-section" style="margin-top:0">
+          <label class="form-label">New Username</label>
+          <input type="text" class="form-input" id="newUsername" placeholder="Enter new username" autocomplete="off"/>
+        </div>
+        <div class="form-section">
+          <label class="form-label">Current Password (to confirm)</label>
+          <input type="password" class="form-input" id="confirmPassForUsername" placeholder="Enter current password" autocomplete="off"/>
+        </div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="changeUsername()">Update Username</button>
+      </div>
+
+      <div class="section-heading" style="margin-top:28px;">CHANGE PASSWORD</div>
+      <div class="info-card" style="padding:16px; margin-bottom:8px;">
+        <div class="form-section" style="margin-top:0">
+          <label class="form-label">Current Password</label>
+          <input type="password" class="form-input" id="currentPassword" placeholder="Enter current password" autocomplete="off"/>
+        </div>
+        <div class="form-section">
+          <label class="form-label">New Password</label>
+          <input type="password" class="form-input" id="newPassword" placeholder="Enter new password" autocomplete="off"/>
+        </div>
+        <div class="form-section">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm new password" autocomplete="off"/>
+        </div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="changePassword()">Update Password</button>
+      </div>
+
+      <div id="profileMsg" style="display:none; margin-top:16px; padding:12px; border-radius:10px; text-align:center; font-size:14px;"></div>
+
+      <button class="btn-danger" style="width:100%; margin-top:32px;" onclick="doLogout()">Sign Out</button>
+    </div>
+
+    <!-- ── Admin Panel ───────────────────────────────────────────────────── -->
+    <div class="screen" id="screenAdmin">
+      <div id="adminContainer">
+        <div class="loading-wrap"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </div><!-- /mainApp -->
+  <!-- ── Add Part Modal ──────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="addPartModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+
+      <!-- Step 1: Enter name -->
+      <div id="addPartStep1">
+        <div class="modal-label">ADD PART TO MASS</div>
+        <div class="form-section" style="margin-top:16px;">
+          <label class="form-label">Part Name</label>
+          <input type="text" class="form-input" id="newPartName"
+            placeholder="e.g. Opening Prayer, Nuptial Song..."
+            autocomplete="off" oninput="validateNewPartName()"/>
+          <div id="newPartNameError" style="display:none; color:var(--red); font-size:13px; margin-top:6px;"></div>
+        </div>
+        <div class="modal-btns" style="margin-top:20px;">
+          <button class="btn-cancel" onclick="closeAddPartModal()">Cancel</button>
+          <button class="btn-save" id="addPartNextBtn" onclick="goToAddPartStep2()">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Choose position -->
+      <div id="addPartStep2" style="display:none;">
+        <div class="modal-label">WHERE TO INSERT</div>
+        <div style="color:var(--text-dim); font-size:14px; margin:8px 0 16px;">
+          Adding: <strong id="addPartNamePreview" style="color:var(--gold);"></strong>
+        </div>
+        <div class="add-part-position-list" id="addPartPositionList"></div>
+        <div class="modal-btns" style="margin-top:20px;">
+          <button class="btn-cancel" onclick="backToAddPartStep1()">← Back</button>
+          <button class="btn-save" onclick="confirmAddCustomPart()">Add Part</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── BOTTOM NAV ──────────────────────────────────────────────────────────── -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-tab active" id="navMasses" onclick="switchTab('masses')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="1"/>
+      <path d="M9 12h6M9 16h4"/>
+    </svg>
+    MASSES
+  </button>
+  <button class="nav-tab" id="navSearch" onclick="switchTab('search')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="11" cy="11" r="7"/>
+      <path d="M21 21l-4.35-4.35"/>
+    </svg>
+    SEARCH
+  </button>
+  <button class="nav-tab" id="navStats" onclick="switchTab('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M18 20V10M12 20V4M6 20v-6"/>
+    </svg>
+    STATS
+  </button>
+  <button class="nav-tab" id="navAdmin" onclick="switchTab('admin')" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+    </svg>
+    ADMIN
+  </button>
+
+</div></nav>
+
+<!-- ── SONG EDIT MODAL ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="songModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-part-title" id="modalPartTitle"></div>
+    <div class="form-section">
+      <label class="form-label">Song Name</label>
+      <input type="text" class="form-input" id="mSong" placeholder="Enter song name..." autocomplete="off" oninput="onSongNameInput(this.value)"/>
+      <!-- Autofill banner (hidden by default) -->
+      <div id="autofillBanner" style="display:none; margin-top:10px;">
+        <div class="autofill-card">
+          <div class="autofill-header">
+            <span class="autofill-icon">✨</span>
+            <div class="autofill-text">
+              <div class="autofill-title">Found in previous Mass</div>
+              <div class="autofill-song-name" id="autofillSongName"></div>
+              <div class="autofill-sub" id="autofillSub"></div>
+            </div>
+          </div>
+          <div class="autofill-tags" id="autofillTags"></div>
+          <div class="autofill-btns">
+            <button class="autofill-btn-no"  onclick="dismissAutofill()">Don't Paste</button>
+            <button class="autofill-btn-yes" onclick="applyAutofill()">✦ Paste Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Beat Folder</label>
+      <div class="chip-row" id="mBeatChips"></div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Beat Page</label>
+      <div class="chip-row" id="mPageChips"></div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Beat Slot</label>
+      <div class="chip-row" id="mSlotChips"></div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Tempo (BPM)</label>
+      <input type="number" class="form-input" id="mTempo" placeholder="e.g. 120" autocomplete="off"/>
+    </div>
+    <div style="display:flex; gap:12px; align-items:flex-end; margin-top:24px;">
+      <div style="flex:1;">
+        <label class="form-label">Scale</label>
+        <input type="text" class="form-input" id="mScale" placeholder="e.g. C, C+1, D-2" oninput="updateTransposed()" autocomplete="off"/>
+      </div>
+      <div class="transposed-badge" id="transposedBadge" style="display:none;">
+        <span class="transposed-label">KEY</span>
+        <span class="transposed-value" id="transposedValue"></span>
+      </div>
+    </div>
+    <button class="btn-clear" onclick="clearSongFields()">✕ Clear All Fields</button>
+    <div class="form-section">
+      <label class="form-label">Song Notes</label>
+      <input type="text" class="form-input" id="mNotes" placeholder="e.g. Start slow, cue at verse 2..." autocomplete="off"/>
+    </div>
+    <!-- Remove Part (only for extra added parts) -->
+    <div id="removePartWrap" style="display:none; margin-top:20px;">
+      <button class="btn-remove-part" onclick="removeCurrentPart()">✕ Remove This Part</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save"   onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT MASS INFO MODAL ─────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="massInfoModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-part-title">Edit Mass Info</div>
+    <div class="form-section">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-input" id="editDate"/>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Occasion</label>
+      <div class="chip-row" id="editOccasionChips"></div>
+      <div id="editCustomOccasionWrap" style="display:none; margin-top:10px;">
+        <input type="text" class="form-input" id="editCustomOccasionInput" placeholder="Enter occasion name..."/>
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Notes</label>
+      <textarea class="form-input" id="editNotes" placeholder="Add notes..." style="min-height:80px"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeMassInfoModal()">Cancel</button>
+      <button class="btn-save"   onclick="saveMassInfo()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── COPY MASS MODAL ───────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="copyMassModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-part-title">⎘ Copy Mass</div>
+    <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px;">All songs and settings will be copied to a new Mass on the selected date.</p>
+    <div class="form-section" style="margin-top:0">
+      <label class="form-label">New Mass Date</label>
+      <input type="date" class="form-input" id="copyMassDate"/>
+    </div>
+    <div class="modal-btns" style="margin-top:24px;">
+      <button class="btn-cancel" onclick="closeCopyMassModal()">Cancel</button>
+      <button class="btn-save" id="copyMassConfirmBtn" onclick="confirmCopyMass()">Copy Mass</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM DIALOG ───────────────────────────────────────────────────────── -->
+<div id="confirmOverlay" style="display:none; position:fixed; inset:0; background:rgba(10,10,12,0.85); z-index:500; align-items:center; justify-content:center; padding:20px;">
+  <div class="confirm-card">
+    <div style="font-size:28px; margin-bottom:14px;">🗑</div>
+    <div id="confirmMsg"></div>
+    <div style="display:flex; gap:10px;">
+      <button id="confirmNo" class="btn-cancel">Cancel</button>
+      <button id="confirmYes" class="btn-danger" style="margin-top:0;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCRIPTS (order matters) ──────────────────────────────────────────────── -->
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/songs.js"></script>
+<script src="js/masses.js"></script>
+<script src="js/search.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/attendance.js"></script>
+<script>
+  document.getElementById('backBtn').onclick = () => {
+    massIsDirty = false;
+    currentMassId = null;
+    document.getElementById('navMasses').classList.add('active');
+    document.getElementById('navSearch').classList.remove('active');
+    document.getElementById('navStats').classList.remove('active');
+    renderMassList();
+    showScreen('screenList', 'STJC – Song Tracker', false);
+  };
+  document.getElementById('newDate').addEventListener('input', function () {
+    document.getElementById('newDateHint').textContent = 'Name will be: ' + (formatName(this.value) || '—');
+  });
+  document.getElementById('loginPassword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('songModal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('massInfoModal').addEventListener('click', function (e) {
+    if (e.target === this) closeMassInfoModal();
+  });
+  document.getElementById('copyMassModal').addEventListener('click', function (e) {
+    if (e.target === this) closeCopyMassModal();
+  });
+
+  // ── SWIPE DOWN TO CLOSE MODALS ──────────────────────────────────────────────
+  function addSwipeToClose(sheetEl, closeFn) {
+    let startY = 0, currentY = 0, dragging = false;
+
+    sheetEl.addEventListener('touchstart', e => {
+      // Only start swipe from top area of sheet (handle zone)
+      const rect = sheetEl.getBoundingClientRect();
+      const touchY = e.touches[0].clientY;
+      if (touchY - rect.top > 60) return; // only top 60px triggers swipe
+      startY   = touchY;
+      currentY = touchY;
+      dragging = true;
+      sheetEl.style.transition = 'none';
+    }, { passive: true });
+
+    sheetEl.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
+      if (diff > 0) {
+        sheetEl.style.transform = `translateY(${diff}px)`;
+        // Prevent page pull-to-refresh while swiping modal
+        e.stopPropagation();
+      }
+    }, { passive: true });
+
+    sheetEl.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      const diff = currentY - startY;
+      sheetEl.style.transition = '';
+      sheetEl.style.transform  = '';
+      if (diff > 80) closeFn();
+    });
+  }
+
+  // Block pull-to-refresh when any modal is open (only block outer page, not modal scroll)
+  document.addEventListener('touchmove', e => {
+    const openModal = document.querySelector('.modal-overlay.open');
+    if (openModal && !e.target.closest('.modal-sheet')) e.preventDefault();
+  }, { passive: false });
+
+  addSwipeToClose(document.querySelector('#songModal .modal-sheet'),     closeModal);
+  addSwipeToClose(document.querySelector('#massInfoModal .modal-sheet'), closeMassInfoModal);
+  addSwipeToClose(document.querySelector('#copyMassModal .modal-sheet'), closeCopyMassModal);
+  addSwipeToClose(document.querySelector('#addPartModal .modal-sheet'),  closeAddPartModal);
+
+  const saved = sessionStorage.getItem('stjc_user');
+  if (saved) { currentUser = JSON.parse(saved); showMainApp(); }
+</script>
+
+</body>
+</html>
