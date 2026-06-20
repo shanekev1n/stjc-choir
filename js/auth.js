@@ -92,6 +92,6 @@ function showScreen(id, title, showBack) {
   document.getElementById(id).classList.add('active');
   document.getElementById('headerTitle').textContent = title;
   document.getElementById('backBtn').style.display = showBack ? 'flex' : 'none';
-  const navScreens = ['screenList', 'screenSearch', 'screenStats', 'screenAdmin'];
+  const navScreens = ['screenList', 'screenSearch', 'screenLibrary', 'screenStats', 'screenAdmin'];
   setBottomNav(navScreens.includes(id));
 }

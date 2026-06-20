@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="STJC"/>
@@ -150,6 +150,27 @@
       </div>
     </div>
 
+    <!-- ── Library Screen ─────────────────────────────────────────────────── -->
+    <div class="screen" id="screenLibrary">
+      <div class="search-bar-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="libraryInput"
+          placeholder="Search lyrics by title..." autocomplete="off"
+          oninput="onLibraryInput(this.value)"/>
+      </div>
+      <div class="search-filter-wrap">
+        <div class="search-filter-label">Filter by Category</div>
+        <div class="search-filter-chips" id="libraryCategoryChips"></div>
+      </div>
+      <button class="btn-add-part" id="addLyricsBtn" style="display:none; margin-bottom:16px;" onclick="showAddLyricsModal()">＋ Add Song Lyrics</button>
+      <div id="libraryResults">
+        <div class="search-empty">
+          <span class="search-empty-icon">📖</span>
+          Loading lyrics library...
+        </div>
+      </div>
+    </div>
+
     <!-- ── Stats Screen ───────────────────────────────────────────────────── -->
     <div class="screen" id="screenStats">
       <div id="statsContainer">
@@ -250,6 +271,55 @@
     </div>
   </div>
 
+  <!-- ── Lyrics Detail Modal ──────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="lyricsModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="lyrics-modal-header">
+        <div class="modal-part-title" id="lyricsModalTitle" style="margin-bottom:0;"></div>
+        <button class="lyrics-categorize-btn" id="lyricsCategorizeBtn" style="display:none;" onclick="toggleCategoryPicker()">⚙ Parts</button>
+      </div>
+      <div class="lyrics-category-row" id="lyricsModalCategory"></div>
+      <!-- Admin-only multi-select panel -->
+      <div class="lyrics-category-picker" id="lyricsCategoryPicker" style="display:none;"></div>
+      <div class="lyrics-body" id="lyricsModalBody"></div>
+      <div class="modal-btns" style="margin-top:24px;">
+        <button class="btn-cancel" onclick="closeLyricsModal()">Close</button>
+        <button class="btn-save" onclick="shareLyrics()">📤 Share</button>
+      </div>
+      <button class="btn-clear" style="margin-top:10px; border-style:solid; color:var(--text-dim); border-color:var(--border2);" onclick="copyLyrics()">📋 Copy Lyrics</button>
+    </div>
+  </div>
+
+  <!-- ── Add Lyrics Modal ─────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="addLyricsModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-label">ADD SONG LYRICS</div>
+
+      <div class="form-section">
+        <label class="form-label">Song Title</label>
+        <input type="text" class="form-input" id="newLyricsTitle" placeholder="e.g. Amazing Grace" autocomplete="off"/>
+        <div id="newLyricsTitleError" style="display:none; color:var(--red); font-size:13px; margin-top:6px;"></div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Lyrics</label>
+        <textarea class="form-input" id="newLyricsBody" placeholder="Paste or type the full lyrics here..." style="min-height:200px;"></textarea>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Mass Part(s) — optional</label>
+        <div class="chip-row" id="newLyricsPartsChips"></div>
+      </div>
+
+      <div class="modal-btns" style="margin-top:20px;">
+        <button class="btn-cancel" onclick="closeAddLyricsModal()">Cancel</button>
+        <button class="btn-save" onclick="confirmAddLyrics()">Save</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <!-- ── BOTTOM NAV ──────────────────────────────────────────────────────────── -->
@@ -268,6 +338,13 @@
       <path d="M21 21l-4.35-4.35"/>
     </svg>
     SEARCH
+  </button>
+  <button class="nav-tab" id="navLibrary" onclick="switchTab('library')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+    </svg>
+    LIBRARY
   </button>
   <button class="nav-tab" id="navStats" onclick="switchTab('stats')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -419,6 +496,7 @@
 <script src="js/stats.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/attendance.js"></script>
+<script src="js/library.js"></script>
 <script>
   document.getElementById('backBtn').onclick = () => {
     massIsDirty = false;
@@ -491,6 +569,8 @@
   addSwipeToClose(document.querySelector('#massInfoModal .modal-sheet'), closeMassInfoModal);
   addSwipeToClose(document.querySelector('#copyMassModal .modal-sheet'), closeCopyMassModal);
   addSwipeToClose(document.querySelector('#addPartModal .modal-sheet'),  closeAddPartModal);
+  addSwipeToClose(document.querySelector('#lyricsModal .modal-sheet'),   closeLyricsModal);
+  addSwipeToClose(document.querySelector('#addLyricsModal .modal-sheet'), closeAddLyricsModal);
 
   const saved = sessionStorage.getItem('stjc_user');
   if (saved) { currentUser = JSON.parse(saved); showMainApp(); }

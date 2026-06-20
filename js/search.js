@@ -7,6 +7,7 @@ function setBottomNav(visible) {
 function switchTab(tab) {
   document.getElementById('navMasses').classList.toggle('active', tab === 'masses');
   document.getElementById('navSearch').classList.toggle('active', tab === 'search');
+  document.getElementById('navLibrary').classList.toggle('active', tab === 'library');
   document.getElementById('navStats').classList.toggle('active', tab === 'stats');
   const navAdmin = document.getElementById('navAdmin');
   if (navAdmin) navAdmin.classList.toggle('active', tab === 'admin');
@@ -23,6 +24,9 @@ function switchTab(tab) {
       </div>`;
     showScreen('screenSearch', 'Song Search', false);
     renderSearchPartChips();
+  } else if (tab === 'library') {
+    showScreen('screenLibrary', 'Song Library', false);
+    initLibrary();
   } else if (tab === 'stats') {
     showScreen('screenStats', 'Statistics', false);
     renderStats();
@@ -82,6 +86,39 @@ function onSearchInput(val) {
   searchTimer = setTimeout(() => doSearch(q), 350);
 }
 
+let lyricsTitleCache = null;
+async function ensureLyricsTitleCache() {
+  if (lyricsTitleCache) return lyricsTitleCache;
+  try {
+    lyricsTitleCache = await sb('song_lyrics', 'GET', null, '?select=id,title');
+  } catch(e) {
+    lyricsTitleCache = [];
+  }
+  return lyricsTitleCache;
+}
+
+function findLyricsMatch(songName, cache) {
+  const norm = s => s.trim().toLowerCase();
+  const target = norm(songName);
+  if (!target) return null;
+  return cache.find(l => {
+    const lt = norm(l.title);
+    return lt === target || lt.includes(target) || target.includes(lt);
+  }) || null;
+}
+
+async function goToLyrics(lyricsId) {
+  await initLibrary(); // ensures allLyrics is loaded before opening
+  document.getElementById('navMasses').classList.remove('active');
+  document.getElementById('navSearch').classList.remove('active');
+  document.getElementById('navLibrary').classList.add('active');
+  document.getElementById('navStats').classList.remove('active');
+  const navAdmin = document.getElementById('navAdmin');
+  if (navAdmin) navAdmin.classList.remove('active');
+  showScreen('screenLibrary', 'Song Library', false);
+  openLyricsModal(lyricsId);
+}
+
 async function doSearch(q) {
   try {
     let query = `?select=*,mass_services(id,date,occasion,name)&order=mass_services(date).desc`;
@@ -117,6 +154,8 @@ async function doSearch(q) {
       grouped[key].entries.push(s);
     });
 
+    const lyricsCache = await ensureLyricsTitleCache();
+
     container.innerHTML = `
       <div style="font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:14px;">
         ${results.length} RESULT${results.length !== 1 ? 'S' : ''} FOUND
@@ -127,7 +166,13 @@ async function doSearch(q) {
       wrapper.style.marginBottom = '16px';
 
       // Song title header
-      wrapper.innerHTML = `<div class="search-group-title">${highlight(group.name, q)}</div>`;
+      const lyricsMatch = findLyricsMatch(group.name, lyricsCache);
+      wrapper.innerHTML = `
+        <div class="search-group-title">${highlight(group.name, q)}</div>
+        ${lyricsMatch ? `
+          <div class="sr-lyrics-hint" onclick="goToLyrics('${lyricsMatch.id}')">
+            📖 Lyrics available — tap to view
+          </div>` : ''}`;
 
       // History timeline entries
       group.entries.forEach((s, idx) => {

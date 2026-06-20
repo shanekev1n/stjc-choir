@@ -44,7 +44,7 @@ input, textarea, select { font-family: var(--font-body); }
 .back-btn:hover { color: var(--lime); background: var(--surface-high); }
 
 /* ─── SCREENS ────────────────────────────────────────────────────────────── */
-.screen { display: none; padding: 16px; max-width: 680px; margin: 0 auto; padding-bottom: 100px; }
+.screen { display: none; padding: 16px; max-width: 680px; margin: 0 auto; padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
 .screen.active { display: block; animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -82,7 +82,7 @@ input, textarea, select { font-family: var(--font-body); }
 .empty-sub { font-size: 14px; color: var(--text-faint); line-height: 1.6; }
 
 /* ─── FAB ────────────────────────────────────────────────────────────────── */
-.fab { position: fixed; bottom: 84px; right: 20px; z-index: 50; background: var(--lime); color: var(--lime-on); border: none; border-radius: var(--radius-sm); padding: 13px 22px; font-family: var(--font-body); font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 24px var(--lime-mid); transition: transform var(--transition), box-shadow var(--transition); }
+.fab { position: fixed; bottom: calc(84px + env(safe-area-inset-bottom)); right: 20px; z-index: 50; background: var(--lime); color: var(--lime-on); border: none; border-radius: var(--radius-sm); padding: 13px 22px; font-family: var(--font-body); font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 24px var(--lime-mid); transition: transform var(--transition), box-shadow var(--transition); }
 .fab:hover { transform: translateY(-2px); box-shadow: 0 0 32px var(--lime-mid); }
 
 /* ─── FORMS ──────────────────────────────────────────────────────────────── */
@@ -157,7 +157,7 @@ textarea.form-input:focus { border: 1px solid var(--lime); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ─── BOTTOM NAV ─────────────────────────────────────────────────────────── */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: center; transform: translateY(100%); transition: transform 0.25s ease; pointer-events: none; background: rgba(16,20,21,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); width: 100%; padding: 8px 0 20px; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: center; transform: translateY(100%); transition: transform 0.25s ease; pointer-events: none; background: rgba(16,20,21,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); width: 100%; padding: 8px 0 calc(20px + env(safe-area-inset-bottom)); }
 .bottom-nav.visible { transform: translateY(0); pointer-events: all; }
 .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; background: none; border: none; color: var(--text-faint); font-family: var(--font-body); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; transition: color var(--transition); text-transform: uppercase; max-width: 680px; }
 .nav-tab svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.5; fill: none; }
@@ -173,6 +173,7 @@ textarea.form-input:focus { border: 1px solid var(--lime); }
 .autofill-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
 .autofill-tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: var(--radius-xl); background: var(--surface-mid); border: 1px solid var(--border); color: var(--text-dim); text-transform: uppercase; }
 .autofill-tag.green { color: var(--lime); border-color: var(--lime-mid); background: var(--lime-dim); }
+.autofill-tag.gold  { color: var(--gold); border-color: rgba(250,204,21,0.3); background: rgba(250,204,21,0.08); }
 .autofill-tag.blue  { color: var(--blue);  border-color: rgba(126,207,255,0.3); background: rgba(126,207,255,0.08); }
 .autofill-btns { display: flex; gap: 8px; }
 .autofill-btn-no  { flex: 1; padding: 9px; background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 12px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: all var(--transition); }
@@ -331,4 +332,91 @@ textarea.form-input:focus { border: 1px solid var(--lime); }
 @media (max-width: 480px) {
   .songs-table th, .songs-table td { padding: 10px 8px; }
   .screen { padding: 14px; }
+}
+
+/* ─── LYRICS LIBRARY ─────────────────────────────────────────────────────────── */
+.lyrics-card-grid {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.lyrics-card {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lyrics-card:hover { background: var(--surface2); border-color: var(--border2); }
+.lyrics-card-main { flex: 1; min-width: 0; }
+.lyrics-card-title { font-size: 15px; color: var(--text); font-weight: 500; }
+.lyrics-card-cat { font-family: var(--font-body); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--lime); margin-top: 3px; text-transform: uppercase; }
+.lyrics-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.lyrics-icon-btn {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 9px; font-size: 14px;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.lyrics-icon-btn:hover { border-color: var(--lime-mid); background: var(--surface-high); }
+
+/* ─── LYRICS MODAL ───────────────────────────────────────────────────────────── */
+.lyrics-category-row { margin: -10px 0 16px; }
+.lyrics-body {
+  font-size: 16px; line-height: 1.8; color: var(--text);
+  white-space: normal;
+}
+
+/* ─── LYRICS MODAL — CATEGORIZE ──────────────────────────────────────────────── */
+.lyrics-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.lyrics-categorize-btn {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+  background: var(--surface-mid); border: 1px solid var(--border-bright);
+  color: var(--text-dim); border-radius: var(--radius-sm); padding: 7px 12px;
+  font-family: var(--font-body); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.lyrics-categorize-btn:hover { border-color: var(--lime-mid); color: var(--lime); }
+
+.lyrics-category-picker {
+  background: var(--surface-mid); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;
+}
+.lyrics-picker-label {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.lyrics-picker-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ─── LYRICS CARD TAGS ───────────────────────────────────────────────────────── */
+.lyrics-card-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.lyrics-mini-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 2px 8px; border-radius: var(--radius-xl);
+  background: var(--lime-dim); border: 1px solid var(--lime-mid);
+  color: var(--lime); text-transform: uppercase;
+}
+
+/* ─── SEARCH — LYRICS AVAILABLE HINT ─────────────────────────────────────────── */
+.sr-lyrics-hint {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; color: var(--lime);
+  cursor: pointer; margin: 2px 0 8px; padding: 3px 0;
+  transition: opacity 0.15s;
+}
+.sr-lyrics-hint:hover { opacity: 0.75; }
+
+/* ─── APP FOOTER (Mass List) ─────────────────────────────────────────────────── */
+#screenList { position: relative; min-height: calc(100vh - 140px); padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+.app-footer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  text-align: center; padding: 20px 0 8px;
+  pointer-events: none;
+}
+.footer-name {
+  font-family: var(--font-head); font-size: 13px;
+  color: var(--text-faint); letter-spacing: 0.04em;
+  text-transform: uppercase; opacity: 0.5;
+}
+.footer-sub {
+  font-size: 11px; color: var(--text-faint);
+  margin-top: 3px; opacity: 0.35;
 }
